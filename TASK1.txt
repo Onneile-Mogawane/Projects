@@ -1,0 +1,70 @@
+  
+#############################################################################################################################
+
+                                                              #TASK 1  LOAD AND AGGREGATE DATASET
+
+###############################################################################################################################
+
+
+    #LOAD PACKAGES
+library(data.table)
+library(dplyr)
+library(lubridate)
+library(tidyr)
+library(tidyverse)
+
+    #SET WORKING DIRECTRY
+setwd("C:/R/project/portfolio/")
+
+    # LOAD DATES REQUIRED
+dates = seq.Date(as.Date("2021-04-01"), as.Date("2021-04-30"),1)
+dates = gsub("-", "", dates)
+
+      #COMPILE DATA FILES
+Comp = paste0("DATA_",dates,".csv") 
+        #SEPARATE DATA COLUMNS AND LOAD
+DATA1 = rbindlist(lapply(paste0(Comp), 
+                              fread,
+                              sep = "|",
+                              #fill = TRUE,
+                              colClasses = "character"
+))
+
+
+# SELECT AND FILTER ONLY NEEDED
+
+Data <- DATA1 %>%
+  filter(TRANSFERED_STATUS == "TS" & RECEIVER_DESTINATION == 'ELECTRICITY'
+         &  RECEIVER_NAME == 'electricity' & SERVICE_FORM == 'ATMCARD')
+
+    # EXPORT TO CSV
+write.csv(Data,"C:/R/project/portfolio/Reports/Data1.csv")
+
+      #CHANGE DATA TYPES TO INCLUDE NECESSARY MATHEMATICAL POINTS, AS.NUMBERIC INCLUDES 2 DECIMAL POINTS
+
+Data$TRANSACTING_TIME <- as.Date(Data$TRANSACTING_TIME , "%d/%m/%Y")
+
+Data$SERVICE_PRICE <- as.numeric(Data$SERVICE_PRICE)
+
+Data$COMMISSION_IN <- as.numeric(Data$COMMISSION_IN)
+
+Data$AMOUNT <- as.numeric(Data$AMOUNT)
+
+Data$COMMISSION_OUT <- as.numeric(Data$COMMISSION_OUT)
+
+      #VIEW SAMPLE DATA
+View(head(Data))
+
+#option1   SUMMARISE AND AGGREGATE REQUIRED TOTALS FIGURES
+
+Final <-  Data [, .("Total_COMMISSION_OUT" = sum(COMMISSION_OUT),
+                    "Total_COMMISSION_IN" = sum(COMMISSION_IN),
+                    "Total_AMOUNT" = sum(AMOUNT),
+                    "Total_SERVICE_PRICE" = sum(SERVICE_PRICE)),
+                by=c("TRANSACTING_TIME","TRANSACTION_TYPE","SERVICE_FORM") ]  
+
+
+  # WRITE OUT RESULTS
+write.csv(Final,"C:/R/project/portfolio/Reports/Data2.csv")
+
+###################################################################################################################  
